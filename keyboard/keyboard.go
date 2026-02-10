@@ -62,7 +62,9 @@ func translateScancode(sc byte) (rune, bool) {
 	}
 
 	if isASCIIDigit(r) && shiftActive() {
-		return toSymbol(r)
+		if sym, ok := toSymbol(r); ok {
+			return sym, true
+		}
 	}
 
 	return r, true
