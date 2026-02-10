@@ -19,9 +19,9 @@ const (
 )
 
 var (
-	lShiftDown bool
-	rShiftDown bool
-	capsLockOn bool
+	leftShiftDown  bool
+	rightShiftDown bool
+	capsLockOn     bool
 )
 
 func readScancode() byte {
@@ -71,16 +71,16 @@ func translateScancode(sc byte) (rune, bool) {
 func handleModifier(sc byte) bool {
 	switch sc {
 	case scLeftShiftDown:
-		lShiftDown = true
+		leftShiftDown = true
 		return true
 	case scLeftShiftUp:
-		lShiftDown = false
+		leftShiftDown = false
 		return true
 	case scRightShiftDown:
-		rShiftDown = true
+		rightShiftDown = true
 		return true
 	case scRightShiftUp:
-		rShiftDown = false
+		rightShiftDown = false
 		return true
 	case scCapsLockDown:
 		capsLockOn = !capsLockOn
@@ -91,7 +91,7 @@ func handleModifier(sc byte) bool {
 }
 
 func shiftActive() bool {
-	return lShiftDown || rShiftDown
+	return leftShiftDown || rightShiftDown
 }
 
 func ReadKey() rune {
