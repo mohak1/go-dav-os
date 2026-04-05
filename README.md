@@ -1,6 +1,7 @@
 # go-dav-os
 
 Hobby project to dig deeper into how an OS works by writing the bare essentials of a kernel in Go. Only the kernel lives here (gccgo, x86_64 long mode); BIOS and bootloader are handled by battle-tested tools (GRUB with a Multiboot2 header). No reinvention of those pieces.
+Join [Discord](https://discord.gg/mBHhPZ65eW) for real time discussions on the project ! 
 
 ## What’s inside
 
@@ -30,9 +31,14 @@ Hobby project to dig deeper into how an OS works by writing the bare essentials 
   - FAT16 filesystem with file create/read/list operations
   - Data persists across reboots on a 20MB disk image
   
-## Architecture
+## Documentation
 
-![DavOS Architecture](docs/architecture.png)
+Full manual: https://dmarro89.github.io/go-dav-os/
+
+- Introduction: https://dmarro89.github.io/go-dav-os/manual/00-introduction/index.html
+- Architecture: https://dmarro89.github.io/go-dav-os/manual/01-overview/architecture.html
+- Boot & GRUB: https://dmarro89.github.io/go-dav-os/manual/02-boot/boot-and-grub.html
+- ...
 
 ## Project status
 
@@ -75,18 +81,18 @@ To force cross binaries: `make CROSS=x86_64-elf`
 ## What you’ll see on screen
 
 - On boot the prompt `> ` shows up
-- `help` lists commands, `clear` wipes the screen, `about` prints kernel info
+- `help` lists commands, `clear` wipes the screen
 - The kernel idles with `hlt` when nothing is happening
 
 ### Shell commands (current)
 
-- `help`, `clear`, `about`, `echo`
+- `help`, `clear`, `echo`, `version`, `history`
 - `ticks` (PIT tick counter)
 - `mem <hex_addr> [len]` (hexdump)
 - `mmap`, `mmapmax` (Multiboot memory map and highest usable end)
 - `pfa`, `alloc`, `free <hex_addr>` (page allocator)
 - `ls`, `write <name> <text...>`, `cat <name>`, `rm <name>`, `stat <name>` (in-memory filesystem)
-- `version` (OS name and version)
+- `run <program>` (task runner)
 
 ### Persistent Storage (FAT16)
 
@@ -105,6 +111,21 @@ fatinit
 fatcreate hello Hello World
 fatls
 fatread hello
+```
+
+### Run simple programs
+
+The task runner can start small assembly programs linked into the kernel.
+At the moment, the supported launch names are:
+- `run hello`
+- `run kread` (ring3 read probe against kernel memory, should page-fault)
+- `run kwrite` (ring3 write probe against kernel memory, should page-fault)
+
+`run hello` starts `user/hello.s`, which calls `SYS_WRITE` and then `SYS_EXIT`.
+
+**Example:**
+```bash
+run hello
 ```
 
 ## Other folder layout
@@ -126,9 +147,7 @@ Contributions are welcome! This project is still early-stage and intentionally m
 
 Personal, open-source, work-in-progress. I’m building pieces as I learn them—the goal is understanding, not chasing modern-OS feature lists
 
-## Contribution
-Thanks to:
-[@metacatdud](https://github.com/metacatdud)for taking care of the entire migration from 32 to 64 bit architecture - really amazing work!<br/>
-[@ranjan42](https://github.com/ranjan42)for the useful documentation added and the implementation of the scheduled and the command history<br/>
-[@jgafnea](https://github.com/jgafnea) for improving the shell and documenting the contributing section<br/>
-[@soorya38](https://github.com/soorya38)for taking care of a missing part of the project - the unit tests!<br/>
+## Contributors
+<a href="https://github.com/dmarro89/go-dav-os/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=dmarro89/go-dav-os" />
+</a>

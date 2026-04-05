@@ -3,7 +3,6 @@ package kernel
 import (
 	"unsafe"
 
-	"github.com/dmarro89/go-dav-os/kernel/scheduler"
 	"github.com/dmarro89/go-dav-os/terminal"
 )
 
@@ -14,8 +13,9 @@ const (
 )
 
 const (
-	SYS_WRITE = 1
-	SYS_EXIT  = 2
+	SYS_WRITE    = 1
+	SYS_EXIT     = 2
+	SYS_GETTICKS = 3
 )
 
 type TrapFrame struct {
@@ -60,6 +60,7 @@ func StoreIDT(p *[10]byte)
 func getInt80StubAddr() uint64
 func getGPFaultStubAddr() uint64
 func getDFaultStubAddr() uint64
+func getPFaultStubAddr() uint64
 func Int80Stub()
 func TriggerInt80()
 func GetCS() uint16
@@ -68,6 +69,10 @@ func getIRQ1StubAddr() uint64
 
 // syscalls
 func TriggerSysWrite(buf *byte, n uint32)
+func TriggerSysExit(status uint32)
+func TriggerSysGetTicks() uint64
+
+func ReturnToKernel()
 
 func Int80Handler(tf *TrapFrame) {
 	switch uint32(tf.RAX) {
@@ -78,10 +83,20 @@ func Int80Handler(tf *TrapFrame) {
 		tf.RAX = sysWrite(fd, buf, n)
 	case SYS_EXIT:
 		status := int(tf.RBX)
-		terminal.Print("Process exited with status ")
+		if tf.CS&3 == 3 {
+			terminal.Print("Process exited with status ")
+			terminal.PrintInt(status)
+			terminal.Print("\n")
+			ReturnToKernel()
+			return
+		}
+
+		terminal.Print("kernel-mode SYS_EXIT rejected (status ")
 		terminal.PrintInt(status)
-		terminal.Print("\n")
-		scheduler.Exit()
+		terminal.Print(")\n")
+		tf.RAX = ^uint64(0) // return -1 for CPL0 callers
+	case SYS_GETTICKS:
+		tf.RAX = ticks
 	default:
 		terminal.Print("unknown syscall\n")
 		tf.RAX = ^uint64(0) // return -1
@@ -140,6 +155,7 @@ func InitIDT() {
 	// Install emergency handlers first
 	setIDTEntry(0x08, getDFaultStubAddr(), cs, intGateKernelFlags)  // #DF
 	setIDTEntry(0x0D, getGPFaultStubAddr(), cs, intGateKernelFlags) // #GP
+	setIDTEntry(0x0E, getPFaultStubAddr(), cs, intGateKernelFlags)  // #PF
 
 	// Install IRQ handlers
 	setIDTEntry(0x20, getIRQ0StubAddr(), cs, intGateKernelFlags) // IRQ0
